@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async' show Future;
+import 'dart:io';
+import 'package:flutter/services.dart' show rootBundle;
 
 void main() {
   runApp(MyApp());
@@ -26,7 +29,7 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Reader'),
     );
   }
 }
@@ -50,17 +53,39 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int _currentPage = 1;
 
-  void _incrementCounter() {
+  Future<File> get _localFile async {
+    return File('assets/hongloumeng.txt');
+  }
+
+  Future<String> readPage() async {
+    try {
+      final file = await _localFile;
+
+      // Read the file.
+      String contents = await file.readAsString();
+
+      return contents;
+    } catch (e) {
+      // If encountering an error, return 0.
+      return '';
+    }
+  }
+
+  Future<String> loadAsset(BuildContext context) async {
+    return await DefaultAssetBundle.of(context)
+        .loadString('assets/hongloumeng.txt');
+  }
+
+  void _incrementPage(newPage) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _currentPage = newPage;
     });
+  }
+
+  void _pageUp() {
+    _incrementPage(_currentPage + 1);
   }
 
   @override
@@ -97,19 +122,27 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            DefaultTextStyle(
+              style: Theme.of(context).textTheme.headline2,
+              textAlign: TextAlign.center,
+              child: FutureBuilder<String>(
+                future: loadAsset(context),
+                builder:
+                    (BuildContext context, AsyncSnapshot<String> snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(snapshot.data);
+                  } else {
+                    return Text('nothing to load');
+                  }
+                },
+              ),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _pageUp,
+        tooltip: 'Next page',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
