@@ -141,11 +141,11 @@ class _SingleReadingViewState extends State<SingleReadingView> {
     return (text.length / PAGE_SIZE).round();
   }
 
-  String getCurrentPage() {
+  String getPage(int page) {
     int maxPageIdx = widget.reading.text.length;
-    int currentPageIdx = PAGE_SIZE * _currentPage;
+    int pageIdx = PAGE_SIZE * page;
     return widget.reading.text
-        .substring(currentPageIdx, min(currentPageIdx + PAGE_SIZE, maxPageIdx));
+        .substring(pageIdx, min(pageIdx + PAGE_SIZE, maxPageIdx));
   }
 
   @override
@@ -158,6 +158,7 @@ class _SingleReadingViewState extends State<SingleReadingView> {
   Widget build(BuildContext context) {
     return new Dismissible(
       key: new ValueKey(_currentPage),
+      background: Text(getPage(_currentPage)),
       onDismissed: (DismissDirection direction) {
         if (direction == DismissDirection.endToStart) {
           _pageUp();
@@ -176,7 +177,7 @@ class _SingleReadingViewState extends State<SingleReadingView> {
             DefaultTextStyle(
               style: Theme.of(context).textTheme.bodyText1,
               textAlign: TextAlign.center,
-              child: Text(getCurrentPage()),
+              child: Text(getPage(_currentPage)),
             ),
           ],
         ),
