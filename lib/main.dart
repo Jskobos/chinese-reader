@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async' show Future;
 import 'dart:math';
 
-int PAGE_SIZE = 900;
+const PAGE_SIZE = 900;
 
 // Future<Reading> fetchReading() async {
 // @todo replace local file with http request
