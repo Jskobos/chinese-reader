@@ -2,7 +2,43 @@ import 'package:flutter/material.dart';
 import 'dart:async' show Future;
 import 'dart:math';
 
-int PAGE_SIZE = 1000;
+int PAGE_SIZE = 900;
+
+// Future<Reading> fetchReading() async {
+// @todo replace local file with http request
+// final response =
+//     await http.get('https://jsonplaceholder.typicode.com/albums/1');
+
+// if (response.statusCode == 200) {
+//   // If the server did return a 200 OK response,
+//   // then parse the JSON.
+//   return Album.fromJson(json.decode(response.body));
+// } else {
+//   // If the server did not return a 200 OK response,
+//   // then throw an exception.
+//   throw Exception('Failed to load album');
+// }
+
+// }
+
+Future<Reading> loadAsset(BuildContext context) {
+  return DefaultAssetBundle.of(context)
+      .loadString('assets/hongloumeng.txt')
+      .then((response) {
+    return Reading(
+        text: response,
+        title: 'Hong Lou Meng',
+        pages: (response.length / PAGE_SIZE).round());
+  });
+}
+
+class Reading {
+  final int pages;
+  final String title;
+  final String text;
+
+  Reading({this.text, this.pages, this.title});
+}
 
 void main() {
   runApp(MyApp());
@@ -30,13 +66,13 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Reader'),
+      home: ReaderApp(title: 'Reader'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+class ReaderApp extends StatefulWidget {
+  ReaderApp({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -50,17 +86,42 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _ReaderAppState createState() => _ReaderAppState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _currentPage = 1;
-  int _maxPages = 5;
-
-  Future<String> loadAsset(BuildContext context) async {
-    return await DefaultAssetBundle.of(context)
-        .loadString('assets/hongloumeng.txt');
+class _ReaderAppState extends State<ReaderApp> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          // Here we take the value from the MyHomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+          title: Text(widget.title),
+        ),
+        body: FutureBuilder<Reading>(
+            future: loadAsset(context),
+            builder: (BuildContext context, AsyncSnapshot<Reading> snapshot) {
+              if (snapshot.hasData) {
+                return SingleReadingView(reading: snapshot.data);
+              } else {
+                return Text('Loading...');
+              }
+            }));
   }
+}
+
+class SingleReadingView extends StatefulWidget {
+  SingleReadingView({Key key, this.reading}) : super(key: key);
+
+  final Reading reading;
+
+  @override
+  _SingleReadingViewState createState() => _SingleReadingViewState();
+}
+
+class _SingleReadingViewState extends State<SingleReadingView> {
+  int _currentPage = 0;
+  int _pages = 1;
 
   void _incrementPage(newPage) {
     setState(() {
@@ -69,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _pageUp() {
-    _incrementPage(min(_currentPage + 1, _maxPages));
+    _incrementPage(min(_currentPage + 1, _pages));
   }
 
   void _pageDown() {
@@ -80,52 +141,44 @@ class _MyHomePageState extends State<MyHomePage> {
     return (text.length / PAGE_SIZE).round();
   }
 
-  String getCurrentPage(String text) {
-    int maxPageIdx = text.length;
+  String getCurrentPage() {
+    int maxPageIdx = widget.reading.text.length;
     int currentPageIdx = PAGE_SIZE * _currentPage;
-    return text.substring(
-        currentPageIdx, min(currentPageIdx + PAGE_SIZE, maxPageIdx));
+    return widget.reading.text
+        .substring(currentPageIdx, min(currentPageIdx + PAGE_SIZE, maxPageIdx));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = getTotalPages(widget.reading.text);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: new Dismissible(
-        key: new ValueKey(_currentPage),
-        onDismissed: (DismissDirection direction) {
-          if (direction == DismissDirection.endToStart) {
-            _pageUp();
-          } else if (direction == DismissDirection.startToEnd) {
-            _pageDown();
-          }
-        },
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              DefaultTextStyle(
-                style: Theme.of(context).textTheme.bodyText1,
-                textAlign: TextAlign.center,
-                child: FutureBuilder<String>(
-                  future: loadAsset(context),
-                  builder:
-                      (BuildContext context, AsyncSnapshot<String> snapshot) {
-                    if (snapshot.hasData) {
-                      return Text(getCurrentPage(snapshot.data));
-                    } else {
-                      return Text('nothing to load');
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
+    return new Dismissible(
+      key: new ValueKey(_currentPage),
+      onDismissed: (DismissDirection direction) {
+        if (direction == DismissDirection.endToStart) {
+          _pageUp();
+        } else if (direction == DismissDirection.startToEnd &&
+            _currentPage >= 0) {
+          _pageDown();
+        } else {
+          return null;
+        }
+      },
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            DefaultTextStyle(
+              style: Theme.of(context).textTheme.bodyText1,
+              textAlign: TextAlign.center,
+              child: Text(getCurrentPage()),
+            ),
+          ],
         ),
       ),
     );
