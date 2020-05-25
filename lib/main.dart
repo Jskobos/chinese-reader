@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async' show Future;
+import 'dart:math';
+
+int PAGE_SIZE = 1000;
 
 void main() {
   runApp(MyApp());
@@ -52,6 +55,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _currentPage = 1;
+  int _maxPages = 5;
 
   Future<String> loadAsset(BuildContext context) async {
     return await DefaultAssetBundle.of(context)
@@ -65,20 +69,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _pageUp() {
-    _incrementPage(_currentPage + 1);
+    _incrementPage(min(_currentPage + 1, _maxPages));
   }
 
   void _pageDown() {
-    _incrementPage(_currentPage - 1);
+    _incrementPage(max(_currentPage - 1, 0));
   }
 
   int getTotalPages(String text) {
-    return (text.length / 1000).round();
+    return (text.length / PAGE_SIZE).round();
   }
 
   String getCurrentPage(String text) {
-    int currentPageIdx = 1000 * _currentPage;
-    return text.substring(currentPageIdx, currentPageIdx + 1000);
+    int maxPageIdx = text.length;
+    int currentPageIdx = PAGE_SIZE * _currentPage;
+    return text.substring(
+        currentPageIdx, min(currentPageIdx + PAGE_SIZE, maxPageIdx));
   }
 
   @override
