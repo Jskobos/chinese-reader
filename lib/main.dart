@@ -138,7 +138,7 @@ class _SingleReadingViewState extends State<SingleReadingView> {
   }
 
   int getTotalPages(String text) {
-    return (text.length / PAGE_SIZE).round();
+    return (text.length / PAGE_SIZE).floor();
   }
 
   String getPage(int page) {
@@ -157,7 +157,7 @@ class _SingleReadingViewState extends State<SingleReadingView> {
   @override
   Widget build(BuildContext context) {
     return new Dismissible(
-        key: new ValueKey(_currentPage),
+        key: new UniqueKey(),
         onDismissed: (DismissDirection direction) {
           if (direction == DismissDirection.endToStart) {
             _pageUp();
